@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analyse de Prompts - Microsoft 365 et PowerShell</title>
+    <style>
+        :root {
+            --primary-color: #0078d4;
+            --secondary-color: #2b579a;
+            --accent-color: #50e6ff;
+            --light-bg: #f9f9f9;
+            --dark-bg: #333;
+            --text-color: #333;
+            --light-text: #f9f9f9;
+            --border-radius: 8px;
+            --box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            color: var(--text-color);
+            line-height: 1.6;
+            background-color: var(--light-bg);
+            padding: 0;
+            margin: 0;
+        }
+        
+        header {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            padding: 2rem;
+            text-align: center;
+            border-bottom: 5px solid var(--accent-color);
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+        
+        .subtitle {
+            font-size: 1.2rem;
+            font-weight: 300;
+            opacity: 0.9;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 2rem;
+        }
+        
+        .tabs {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 2rem;
+        }
+        
+        .tab-btn {
+            padding: 1rem 2rem;
+            background-color: #e0e0e0;
+            border: none;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        
+        .tab-btn:first-child {
+            border-radius: var(--border-radius) 0 0 var(--border-radius);
+        }
+        
+        .tab-btn:last-child {
+            border-radius: 0 var(--border-radius) var(--border-radius) 0;
+        }
+        
+        .tab-btn.active {
+            background-color: var(--primary-color);
+            color: white;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .prompt-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+        
+        .prompt-box, .analysis-box {
+            background-color: white;
+            padding: 2rem;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+        }
+        
+        .prompt-box {
+            background-color: #f0f7ff;
+            border-left: 5px solid var(--primary-color);
+        }
+        
+        .analysis-box {
+            background-color: white;
+            border-left: 5px solid var(--secondary-color);
+        }
+        
+        h2 {
+            color: var(--primary-color);
+            margin-bottom: 1.5rem;
+            font-size: 1.8rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid #eaeaea;
+        }
+        
+        h3 {
+            color: var(--secondary-color);
+            margin: 1.5rem 0 1rem;
+            font-size: 1.4rem;
+        }
+        
+        pre {
+            background-color: var(--dark-bg);
+            color: var(--light-text);
+            padding: 1.5rem;
+            border-radius: var(--border-radius);
+            overflow-x: auto;
+            margin: 1rem 0;
+            white-space: pre-wrap;
+            font-family: 'Consolas', 'Courier New', monospace;
+        }
+        
+        .highlight {
+            background-color: rgba(80, 230, 255, 0.2);
+            padding: 0.2rem 0.4rem;
+            border-radius: 4px;
+            font-weight: 600;
+        }
+        
+        .explanation-section {
+            margin-top: 1.5rem;
+            padding: 1.5rem;
+            background-color: #f8f9fa;
+            border-radius: var(--border-radius);
+            border-left: 4px solid #6c757d;
+        }
+        
+        .tips-section {
+            margin-top: 2rem;
+            padding: 1.5rem;
+            background-color: #e8f4fd;
+            border-radius: var(--border-radius);
+            border-left: 4px solid var(--primary-color);
+        }
+        
+        .tips-section h3 {
+            color: var(--primary-color);
+        }
+        
+        ul, ol {
+            padding-left: 2rem;
+            margin: 1rem 0;
+        }
+        
+        li {
+            margin-bottom: 0.5rem;
+        }
+        
+        footer {
+            background-color: var(--dark-bg);
+            color: white;
+            padding: 2rem;
+            text-align: center;
+            margin-top: 3rem;
+        }
+        
+        .structure-container {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            margin: 1.5rem 0;
+        }
+        
+        .structure-item {
+            background-color: #f0f7ff;
+            padding: 1rem;
+            border-radius: var(--border-radius);
+            border-left: 4px solid var(--accent-color);
+        }
+        
+        .structure-item strong {
+            color: var(--primary-color);
+        }
+        
+        .structure-item p {
+            margin-top: 0.5rem;
+        }
+        
+        @media (max-width: 768px) {
+            .prompt-container {
+                grid-template-columns: 1fr;
+            }
+            
+            .container {
+                padding: 0 1rem;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .tab-btn {
+                padding: 0.8rem 1.2rem;
+                font-size: 0.9rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Analyse de Prompts IA</h1>
+        <p class="subtitle">Décryptage des techniques efficaces pour Microsoft 365 et PowerShell</p>
+    </header>
+    
+    <div class="container">
+        <div class="tabs">
+            <button class="tab-btn active" onclick="openTab(event, 'tab1')">Architecture Microsoft 365</button>
+            <button class="tab-btn" onclick="openTab(event, 'tab2')">Script PowerShell</button>
+        </div>
+        
+        <div id="tab1" class="tab-content active">
+            <h2>Prompt pour Architecture Microsoft 365 Sécurisée</h2>
+            
+            <div class="prompt-container">
+                <div class="prompt-box">
+                    <h3>Le Prompt Original</h3>
+                    <pre>Agis comme un expert Microsoft 365 spécialisé en architecture sécurisée pour PME de 50 à 100 utilisateurs.
+
+Ta mission :
+1. Concevoir une architecture Microsoft 365 complète pour une PME fictive.
+2. Prioriser la sécurité des identités et des accès.
+3. Structurer la gouvernance des groupes, des rôles, et des autorisations.
+4. Intégrer les services clés : Exchange Online, SharePoint Online, Teams, OneDrive, Entra ID, Intune.
+5. Proposer un plan de sécurisation avancée (MFA, Conditional Access, compliance, DLP, MDM).
+6. Distinguer les rôles utilisateurs standards et administrateurs.
+
+Contraintes de sortie :
+- Livrer un schéma global d'architecture Microsoft 365
+- Détail écrit sous forme de plan hiérarchique
+- Conseils de sécurisation précis par service
+- Langage accessible, sans jargon, vulgarisé pour public non expert
+- Proposer un tableau de synthèse "Risque / Action / Priorité"</pre>
+                </div>
+                
+                <div class="analysis-box">
+                    <h3>Analyse et Explication</h3>
+                    
+                    <p>Ce prompt est soigneusement structuré pour obtenir une architecture Microsoft 365 sécurisée et professionnelle pour une PME. Voici l'explication détaillée :</p>
+                    
+                    <div class="structure-container">
+                        <div class="structure-item">
+                            <strong>Définition du contexte et de l'objectif</strong>
+                            <p>"Agis comme un expert Microsoft 365 spécialisé en architecture sécurisée pour PME de 50 à 100 utilisateurs."</p>
+                            <p>Cette introduction fixe clairement le cadre et la taille de l'entreprise cible, ce qui permet d'obtenir une réponse adaptée aux besoins spécifiques d'une PME.</p>
+                        </div>
+                        
+                        <div class="structure-item">
+                            <strong>Mission détaillée et hiérarchisée</strong>
+                            <p>La section "Ta mission" découpe le travail en 6 points précis et progressifs, allant de la conception globale aux spécificités des rôles utilisateurs.</p>
+                            <p>Cette approche garantit que l'IA traite systématiquement tous les aspects essentiels d'une architecture Microsoft 365 sécurisée.</p>
+                        </div>
+                        
+                        <div class="structure-item">
+                            <strong>Priorisation de la sécurité</strong>
+                            <p>Les points 2, 3, 5 et 6 mettent l'accent sur la sécurité (identités, accès, gouvernance, sécurisation avancée, séparation des rôles).</p>
+                            <p>Cette insistance assure que la réponse ne sera pas un simple schéma marketing mais une véritable architecture orientée sécurité.</p>
+                        </div>
+                        
+                        <div class="structure-item">
+                            <strong>Spécification des services à intégrer</strong>
+                            <p>Le point 4 liste précisément les services Microsoft 365 qui doivent être inclus dans l'architecture.</p>
+                            <p>Cela garantit que la réponse couvrira l'ensemble de l'écosystème Microsoft 365 pertinent pour une PME.</p>
+                        </div>
+                        
+                        <div class="structure-item">
+                            <strong>Contraintes de sortie strictes</strong>
+                            <p>La dernière section impose un format de réponse structuré et adapté à l'audience.</p>
+                            <p>Ces contraintes assurent que le résultat sera facilement exploitable, avec un langage accessible et une présentation hiérarchique claire.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="tips-section">
+                        <h3>Pourquoi ce prompt fonctionne bien</h3>
+                        <ul>
+                            <li><strong>Cadre clair et exigeant :</strong> Le prompt ne laisse pas de place à l'interprétation et guide l'IA vers un résultat professionnel.</li>
+                            <li><strong>Priorité à la sécurité :</strong> Les aspects sécuritaires sont explicitement mis en avant, garantissant une architecture robuste.</li>
+                            <li><strong>Structure imposée :</strong> Le format de sortie demandé force l'IA à organiser sa réponse de manière exploitable.</li>
+                            <li><strong>Vulgarisation exigée :</strong> La demande de langage accessible assure que le résultat sera compréhensible par des non-spécialistes.</li>
+                            <li><strong>Approche systématique :</strong> La décomposition en points précis permet de couvrir tous les aspects essentiels d'une architecture Microsoft 365.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div id="tab2" class="tab-content">
+            <h2>Prompt pour Script PowerShell d'Audit Active Directory</h2>
+            
+            <div class="prompt-container">
+                <div class="prompt-box">
+                    <h3>Le Prompt Original</h3>
+                    <pre>Agis comme un expert en cybersécurité et en scripting PowerShell spécialisé dans les environnements Active Directory pour PME (50-100 utilisateurs).
+
+Ton objectif est de concevoir un script PowerShell complet, robuste et lisible, qui réalise un audit automatique d'un Active Directory fictif selon les étapes suivantes :
+
+Audit à réaliser :
+    Vérification des stratégies de mot de passe et verrouillage de compte.
+    Analyse des comptes administrateurs et des droits d'élévation.
+    Vérification de la configuration DNS de l'environnement AD.
+    Analyse de la structure des Unités d'Organisation (OU) et des GPO associées.
+    Identification des comptes inactifs, orphelins ou vulnérables.
+    Vérification de l'activation de l'audit de sécurité et analyse des logs.
+    Contrôle de la conformité avec les meilleures pratiques Microsoft pour Active Directory.
+
+Contraintes techniques pour le script :
+    Respecter les bonnes pratiques de scripting PowerShell (modularité, commentaires clairs, gestion des erreurs, code lisible).
+
+    Générer un rapport complet au format HTML, structuré en sections numérotées, avec :
+        Les faiblesses détectées (explication claire, pas de jargon inutile).
+        La recommandation corrective priorisée.
+        L'estimation de l'urgence (Critique / Important / Amélioration).
+        Illustrations pratiques si pertinent (ex : exemples de mauvaise/good practice).
+    Organiser le script en fonctions séparées pour chaque étape d'audit.
+    Ajouter une fonction principale qui orchestre l'exécution et la génération du rapport.
+    Le script doit être exécutable sans modification sur une machine disposant de PowerShell 5.1+ et des modules standards pour AD (ActiveDirectory).
+
+Style du rapport HTML :
+    Titre clair
+    Table des matières cliquable
+    Sections bien délimitées
+    Style épuré mais lisible (polices sans-serif, couleurs légères pour Critique/Important/Amélioration)</pre>
+                </div>
+                
+                <div class="analysis-box">
+                    <h3>Analyse et Explication</h3>
+                    
+                    <p>Ce prompt est conçu pour obtenir un script PowerShell professionnel et directement exploitable pour l'audit d'Active Directory. Voici son analyse détaillée :</p>
+                    
+                    <div class="structure-container">
+                        <div class="structure-item">
+                            <strong>Définition du contexte expert</strong>
+                            <p>"Agis comme un expert en cybersécurité et en scripting PowerShell spécialisé dans les environnements Active Directory pour PME (50-100 utilisateurs)."</p>
+                            <p>Cette introduction force l'IA à adopter une posture d'expert technique, avec une double spécialisation (cybersécurité et PowerShell) et un contexte d'entreprise précis.</p>
+                        </div>
+                        
+                        <div class="structure-item">
+                            <strong>Mission clairement définie</strong>
+                            <p>L'objectif est explicitement formulé : créer un script d'audit automatique pour Active Directory avec des qualités précises (complet, robuste, lisible).</p>
+                            <p>Cette clarté permet d'éviter toute ambiguïté sur le résultat attendu.</p>
+                        </div>
+                        
+                        <div class="structure-item">
+                            <strong>Étapes d'audit exhaustives</strong>
+                            <p>La section "Audit à réaliser" énumère 7 domaines d'audit spécifiques, couvrant l'ensemble des aspects critiques d'un Active Directory.</p>
+                            <p>Cette liste détaillée garantit que le script produit sera complet et traitera tous les points de vulnérabilité importants.</p>
+                        </div>
+                        
+                        <div class="structure-item">
+                            <strong>Contraintes techniques précises</strong>
+                            <p>Le prompt impose des exigences techniques strictes : bonnes pratiques de scripting PowerShell, structure modulaire, rapport HTML formaté, etc.</p>
+                            <p>Ces contraintes assurent que le code généré sera de haute qualité, maintenable et directement exploitable.</p>
+                        </div>
+                        
+                        <div class="structure-item">
+                            <strong>Format de sortie structuré</strong>
+                            <p>Les spécifications détaillées pour le rapport HTML (structure, contenu, formatage) orientent l'IA vers un livrable professionnel.</p>
+                            <p>La demande d'explications claires "sans jargon inutile" garantit que le rapport sera compréhensible même par des non-spécialistes.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="tips-section">
+                        <h3>Pourquoi ce prompt fonctionne bien</h3>
+                        <ul>
+                            <li><strong>Contexte expert imposé :</strong> L'IA est contrainte de se positionner comme un spécialiste technique de haut niveau.</li>
+                            <li><strong>Mission sans ambiguïté :</strong> L'objectif est parfaitement défini, sans laisser place à l'interprétation.</li>
+                            <li><strong>Contraintes techniques fortes :</strong> Les exigences précises sur la structure du script et sa qualité garantissent un résultat professionnel.</li>
+                            <li><strong>Format de sortie standardisé :</strong> Les spécifications du rapport HTML assurent un livrable directement exploitable.</li>
+                            <li><strong>Équilibre technique/accessibilité :</strong> La demande d'explications claires sans jargon excessive rend le résultat accessible.</li>
+                            <li><strong>Modularité imposée :</strong> L'exigence de fonctions séparées favorise un code bien structuré et maintenable.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <footer>
+        <p>Analyse de Prompts IA pour Microsoft 365 et PowerShell | © 2025</p>
+    </footer>
+    
+    <script>
+        function openTab(evt, tabName) {
+            var i, tabcontent, tabbtns;
+            
+            tabcontent = document.getElementsByClassName("tab-content");
+            for (i = 0; i < tabcontent.length; i++) {
+                tabcontent[i].classList.remove("active");
+            }
+            
+            tabbtns = document.getElementsByClassName("tab-btn");
+            for (i = 0; i < tabbtns.length; i++) {
+                tabbtns[i].classList.remove("active");
+            }
+            
+            document.getElementById(tabName).classList.add("active");
+            evt.currentTarget.classList.add("active");
+        }
+    </script>
+</body>
+</html>
